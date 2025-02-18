@@ -61,7 +61,7 @@
         <!-- הוספת UserPostsActivity, UserListActivity למנהל - Michael, 17/2/2025 -->
         <activity
             android:name=".UserPostsActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="פוסטים של משתמש" />
 
         <activity

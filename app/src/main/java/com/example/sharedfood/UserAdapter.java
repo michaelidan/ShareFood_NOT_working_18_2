@@ -1,6 +1,5 @@
 package com.example.sharedfood;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +16,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     private final List<User> userList;
     private final UserActionListener listener;
 
+    // ✅ הוספת הממשק UserActionListener בתוך הקובץ (לא צריך קובץ נפרד)
     public interface UserActionListener {
         void onAction(User user, String action);
+        void onUserSelected(User user);
     }
 
     public UserAdapter(List<User> userList, UserActionListener listener) {
@@ -44,6 +45,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
 
         holder.tempBanButton.setOnClickListener(v -> listener.onAction(user, "temp_ban"));
         holder.promoteButton.setOnClickListener(v -> listener.onAction(user, "promote"));
+
+        holder.itemView.setOnClickListener(v -> listener.onUserSelected(user)); // ✅ שימוש בפונקציה מהאינטרפייס
     }
 
     @Override

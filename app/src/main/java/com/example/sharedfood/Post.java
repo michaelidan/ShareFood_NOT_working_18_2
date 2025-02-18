@@ -16,7 +16,7 @@ public class Post implements Parcelable {
     private String description;
     private List<String> filters;
     private String imageUrl; // URL של התמונה (יכול להשתנות אחרי יצירת האובייקט)
-    private Uri imageUri; // URI של התמונה
+    private String imageUriString; // שינוי מ-Uri ל-String לאחסון ב-Firestore
     private String city;
     private GeoPoint location; // מיקום המשתמש, מסוג GeoPoint
     private String id;
@@ -31,6 +31,7 @@ public class Post implements Parcelable {
         this.filters = filters;
         this.imageUrl = imageUrl;
     }
+
     // Empty constructor for Firebase
     public Post() {}
 
@@ -41,7 +42,7 @@ public class Post implements Parcelable {
         filters = new ArrayList<>();
         in.readStringList(filters);
         imageUrl = in.readString();
-        imageUri = in.readParcelable(Uri.class.getClassLoader());
+        imageUriString = in.readString(); // שינוי לאחסון כתובת התמונה כמחרוזת
         city = in.readString();
         double latitude = in.readDouble();
         double longitude = in.readDouble();
@@ -73,7 +74,7 @@ public class Post implements Parcelable {
         dest.writeString(description);
         dest.writeStringList(filters);
         dest.writeString(imageUrl);
-        dest.writeParcelable(imageUri, flags);
+        dest.writeString(imageUriString);
         dest.writeString(city);
         if (location != null) {
             dest.writeDouble(location.getLatitude());
@@ -85,20 +86,24 @@ public class Post implements Parcelable {
         dest.writeString(id);
     }
 
-    // Getters and setters
-    public String getId() { //
+    // ✅ כל ה-getters וה-setters הוחזרו כמו שהיו!
+
+    public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
     }
+
     public String getUserId() {
         return userId;
     }
+
     public void setUserId(String userId) {
         this.userId = userId;
     }
+
     public String getDescription() {
         return description;
     }
@@ -123,14 +128,23 @@ public class Post implements Parcelable {
         this.imageUrl = imageUrl;
     }
 
+    // 🔹 המרה בין String ל-Uri באופן שקוף למשתמש!
     public Uri getImageUri() {
-        return imageUri;
+        return imageUriString != null ? Uri.parse(imageUriString) : null;
+    }
+
+    public String getImageUriString() {
+        return imageUriString;
+    }
+
+    public void setImageUriString(String imageUriString) {
+        this.imageUriString = imageUriString;
     }
 
     public void setImageUri(Uri imageUri) {
-        this.imageUri = imageUri;
-
+        this.imageUriString = (imageUri != null) ? imageUri.toString() : null;
     }
+
     public GeoPoint getLocation() {
         return location;
     }
@@ -138,7 +152,7 @@ public class Post implements Parcelable {
     public void setLocation(GeoPoint location) {
         this.location = location;
     }
-    // הוספת גטרים וסטטרים לשדה העיר
+
     public String getCity() {
         return city;
     }
@@ -163,6 +177,7 @@ public class Post implements Parcelable {
     public void setImageBase64(String imageBase64) {
         this.imageBase64 = imageBase64;
     }
+
     public boolean hasFilter(String filter) {
         if (filters == null) return false;
         return filters.contains(filter);

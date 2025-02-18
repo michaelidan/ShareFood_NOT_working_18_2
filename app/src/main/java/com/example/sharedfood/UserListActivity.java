@@ -1,5 +1,6 @@
 package com.example.sharedfood;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -21,7 +22,11 @@ import java.util.Map;
 
 import com.example.sharedfood.User;
 
-public class UserListActivity extends AppCompatActivity {
+//public class UserListActivity extends AppCompatActivity {
+//public class UserListActivity extends AppCompatActivity implements UserActionListener {
+public class UserListActivity extends AppCompatActivity implements UserAdapter.UserActionListener {
+
+
 
     private static final String TAG = "UserListActivity"; // תג לזיהוי הודעות לוג
     private RecyclerView userRecyclerView; // רכיב להצגת רשימת המשתמשים
@@ -30,12 +35,18 @@ public class UserListActivity extends AppCompatActivity {
     private FirebaseAuth mAuth; // ניהול אימות המשתמשים
     private final Handler handler = new Handler();
     private final Runnable removeExpiredBansTask = new Runnable() {
+
         @Override
         public void run() {
             checkAndRemoveExpiredTempBans();
             handler.postDelayed(this, 5 * 60 * 1000); // פועל כל 5 דקות
         }
     };
+
+    public interface UserActionListener {
+        void onAction(User user, String action);
+        void onUserSelected(User user);
+    }
 
     @Override
     protected void onResume() {
@@ -52,29 +63,22 @@ public class UserListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user_list); // קביעת ממשק המשתמש מתוך קובץ ה-XML של הפעילות
+        setContentView(R.layout.activity_user_list);
 
-        // אתחול Firebase Firestore לטיפול במסד הנתונים בענן
         db = FirebaseFirestore.getInstance();
-
-        // אתחול Firebase Authentication לטיפול באימות המשתמשים
         mAuth = FirebaseAuth.getInstance();
 
-        // אתחול ה-RecyclerView להצגת רשימת המשתמשים
         userRecyclerView = findViewById(R.id.userRecyclerView);
-
-        // קביעת מנהל הפריסה לרשימה, במקרה זה פריסה לינארית (רשימה אנכית)
         userRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // יצירת אדפטר לרשימת המשתמשים והגדרת פונקציה לטיפול בפעולות על המשתמשים
-        userAdapter = new UserAdapter(new ArrayList<>(), this::performActionOnUser);
-
-        // חיבור האדפטר ל-RecyclerView כדי להציג את הנתונים על המסך
+        // ✅ העברת this כמאזין (עכשיו זה תקין!)
+        userAdapter = new UserAdapter(new ArrayList<>(), this);
         userRecyclerView.setAdapter(userAdapter);
 
-        // טעינת המשתמשים מתוך מסד הנתונים והצגתם ברשימה
         loadUsers();
     }
+
+
 
 
     private void loadUsers() {
@@ -125,19 +129,29 @@ public class UserListActivity extends AppCompatActivity {
 
 
     private void performActionOnUser(User user, String action) {
-        // ניתוב הפעולה המתבקשת
         switch (action) {
             case "ban":
                 banUser(user);
                 break;
             case "temp_ban":
-                showTempBanDialog(user); // הצגת דיאלוג לבחירת משך החסימה
+                showTempBanDialog(user);
                 break;
             case "promote":
                 promoteToAdmin(user);
                 break;
+            case "view_posts":
+                viewUserPosts(user);
+                break;
         }
     }
+
+    // ✅ מיקום תקין של הפונקציה מחוץ ל-switch
+    private void viewUserPosts(User user) {
+        Intent intent = new Intent(UserListActivity.this, UserPostsActivity.class);
+        intent.putExtra("userEmail", user.getEmail());
+        startActivity(intent);
+    }
+
 
     private void showTempBanDialog(User user) {
         // בדיקה אם המשתמש כבר חסום זמנית
@@ -301,4 +315,32 @@ public class UserListActivity extends AppCompatActivity {
                     Toast.makeText(this, "שגיאה בהפיכת המשתמש למנהל", Toast.LENGTH_SHORT).show();
                 });
     }
+
+    @Override
+    public void onAction(User user, String action) {
+        performActionOnUser(user, action);
+    }
+
+    @Override
+    public void onUserSelected(User user) {
+        Intent intent = new Intent(this, UserPostsActivity.class);
+        intent.putExtra("userEmail", user.getEmail()); // שליחת האימייל של המשתמש
+        Log.d("UserListActivity", "Opening posts for user: " + user.getEmail());
+        startActivity(intent);
+    }
+
+
+/*
+    @Override
+    public void onUserSelected(User user) {
+        Intent intent = new Intent(this, UserPostsActivity.class);
+        intent.putExtra("userEmail", user.getEmail());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onAction(User user, String action) {
+        performActionOnUser(user, action);
+    }
+*/
 }
